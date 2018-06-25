@@ -30,6 +30,6 @@ catkin_package(
   INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/cas/include ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/include ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/include
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS
-  DEPENDS XercesC APR JNI)
+  DEPENDS)
 
 ADD_SUBDIRECTORY(src)
