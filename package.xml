@@ -10,12 +10,4 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <depend>libxerces-c-dev</depend>
-
-  <depend>libapr1-dev</depend>
-
-  <depend>libicu-dev</depend>
-
-  <exec_depend>mongodb</exec_depend>
-
 </package>
