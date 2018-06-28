@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>uima</name>
+  <name>uimacpp_ros</name>
   <version>2.4.1</version>
   <description>
   This package is a ROS wrapper of APACHE UIMACPP.

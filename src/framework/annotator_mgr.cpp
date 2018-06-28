@@ -157,6 +157,7 @@ namespace uima {
 
       assert( ! crTAESpecifier.isPrimitive() );
       //BSIvector < icu::UnicodeString > const & crVecEngineNames = crTAESpecifier.getAnalysisEngineMetaData()->getFixedFlow()->getNodes();
+
       vector < icu::UnicodeString > const & crVecEngineNames = crTAESpecifier.getAnalysisEngineMetaData()->getFlowConstraints()->getNodes();
 
       // for all engines in the flow
@@ -167,6 +168,8 @@ namespace uima {
 //         clTrace.dump(_TEXT("Delegate name"), crEngineName);
 
         AnnotatorContext * pDelegateANC = rANC.getDelegate(crEngineName);
+        if (pDelegateANC == NULL)
+          cerr << "Cannot find engine: " << crEngineName << " in the given text analysis engine file." << endl;
         ErrorInfo errInfo;
         // create a delegate TAE which owns neither the ANC, nor the TAESpecifier, nor the CAS definition
         AnalysisEngine * pEngine = Framework::createAnalysisEngine(*pDelegateANC,
