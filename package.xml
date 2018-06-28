@@ -14,8 +14,6 @@
 
   <depend>libapr1-dev</depend>
 
-  <depend>openjdk-8-jdk</depend>
-
   <depend>libicu-dev</depend>
 
   <exec_depend>mongodb</exec_depend>
