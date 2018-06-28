@@ -14,7 +14,7 @@
 
   <depend>libapr1-dev</depend>
 
-  <depend>openjdk-7-jdk</depend>
+  <depend>openjdk-8-jdk</depend>
 
   <depend>libicu-dev</depend>
 
