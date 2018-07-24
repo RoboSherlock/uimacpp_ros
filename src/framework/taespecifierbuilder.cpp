@@ -350,7 +350,8 @@ namespace uima {
             XMLString::compareString(descElem->getNodeName(), convert(TAG_CASCONSUMER_DESC)) == 0 );
     //save the root node name
     if (XMLString::compareString(descElem->getNodeName(), convert(TAG_CASCONSUMER_DESC)) == 0) {
-      taeSpec.setPrimitive(true);
+        std::cerr << "That primitive???" << std::endl;
+        taeSpec.setPrimitive(true);
     }
     taeSpec.setXmlRootTag(convert(descElem->getNodeName()));
     DOMNodeList * children = descElem->getChildNodes();
@@ -403,6 +404,8 @@ namespace uima {
 				  icu::UnicodeString fn = ResourceManager::resolveFilename(loc, xmlFileLoc);
 				  if (loc.length() > 0) {			    
 					parseAnalysisEngineDescription(*pdelegateTaeSpec, fn);
+                    std::cerr << std::endl;
+                    std::cerr << "key of delegate ae is: " << key << std::endl;
                     taeSpec.addDelegate(key, pdelegateTaeSpec);
                   } else {
                     //throw exception when import location attribute is not set.
@@ -425,7 +428,7 @@ namespace uima {
                                                      xmlFileLoc);
                     parseAnalysisEngineDescription(*pdelegateTaeSpec, newFileName);
                     taeSpec.addDelegate(key, pdelegateTaeSpec);
-
+                    std::cerr << "key of delegate ae is: -------------------" << key << std::endl;
                   }
                 }  //include
               }

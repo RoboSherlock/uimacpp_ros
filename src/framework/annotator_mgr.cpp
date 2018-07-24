@@ -168,8 +168,10 @@ namespace uima {
 //         clTrace.dump(_TEXT("Delegate name"), crEngineName);
 
         AnnotatorContext * pDelegateANC = rANC.getDelegate(crEngineName);
-        if (pDelegateANC == NULL)
+        if (pDelegateANC == NULL) {
           cerr << "Cannot find engine: " << crEngineName << " in the given text analysis engine file." << endl;
+          return UIMA_ERR_ANNOTATOR_COULD_NOT_LOAD;
+        }
         ErrorInfo errInfo;
         // create a delegate TAE which owns neither the ANC, nor the TAESpecifier, nor the CAS definition
         AnalysisEngine * pEngine = Framework::createAnalysisEngine(*pDelegateANC,

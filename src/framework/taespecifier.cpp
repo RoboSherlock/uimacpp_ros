@@ -243,6 +243,8 @@ namespace uima {
 
   void AnalysisEngineMetaData::addNameValuePair(const icu::UnicodeString & groupName,
       NameValuePair * nvPair) {
+    std::cerr << "group name: " << groupName << ", name value pair name: "
+              << nvPair->getName() << std::endl;
     if (! isParameterDefined(groupName, nvPair->getName(), "")) {
       const icu::UnicodeString & paramName = nvPair->getName();
       if (hasGroups()) {

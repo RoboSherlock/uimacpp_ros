@@ -341,7 +341,10 @@ namespace uima {
     void addNameValuePair(NameValuePair * nvPair) {
       NameValuePair * oldPair = getNameValuePair(nvPair->getName());
       if (EXISTS(oldPair)) {
+        std::cout << nvPair->getName() << " already exists." << std::endl;
         delete oldPair;
+      } else {
+        std::cout << "-------------------" << nvPair->getName() << " doesn't exists in this AE metadata storage." << std::endl;
       }
       iv_nameValuePairs[nvPair->getName()] = nvPair;
     }
