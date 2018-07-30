@@ -11,15 +11,7 @@ SET(SOURCES
 ADD_LIBRARY(uimacpp_ros SHARED ${SOURCES})
 
 # TARGET_COMPILE_OPTIONS(uima PRIVATE -Wno-deprecated)
-target_link_libraries(uimacpp_ros ${catkin_LIBRARIES})
-
-FIND_PACKAGE(XercesC)
-IF(XercesC_FOUND)
-  INCLUDE_DIRECTORIES(${XercesC_INCLUDE_DIRS})
-  TARGET_LINK_LIBRARIES(uimacpp_ros ${XercesC_LIBRARIES})
-ELSE()
-  MESSAGE(FATAL_ERROR "XercesC library not found")
-ENDIF(XercesC_FOUND)
+target_link_libraries(uimacpp_ros ${catkin_LIBRARIES} ${XercesC_LIBRARIES})
 
 FIND_PACKAGE(APR)
 IF(APR_FOUND)
