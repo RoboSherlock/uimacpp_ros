@@ -383,6 +383,7 @@ namespace uima {
         return UIMA_ERR_CONFIG_OBJECT_COMITTED;
       }
       iv_pFlowConstraints = flow;
+      std::cout << "flow constain:" << iv_pFlowConstraints << std::endl;
       return UIMA_ERR_NONE;
     }
 
@@ -391,6 +392,8 @@ namespace uima {
     }
 
     FlowConstraints  const * getFlowConstraints() const {
+      std::cout << "------------------- enter flow constraint?" << std::endl;
+      std::cout << "---- flow constain:" << iv_pFlowConstraints << std::endl;
       return(iv_pFlowConstraints);
     }
 
@@ -911,10 +914,12 @@ namespace uima {
     }
 
     AnalysisEngineMetaData * getAnalysisEngineMetaData() {
+        std::cout << "entered getanalysisenginemetadata: " << iv_pAeMetaData << std::endl;
       return(iv_pAeMetaData);
     }
 
     AnalysisEngineMetaData const * getAnalysisEngineMetaData() const {
+        std::cout << "entered getanalysisenginemetadata: " << iv_pAeMetaData << std::endl;
       return(iv_pAeMetaData);
     }
 

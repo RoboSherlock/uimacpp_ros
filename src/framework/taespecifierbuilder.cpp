@@ -53,6 +53,7 @@
 #include "xercesc/sax/SAXParseException.hpp"
 #include "xercesc/framework/LocalFileInputSource.hpp"
 #include "xercesc/framework/MemBufInputSource.hpp"
+#include "xercesc/util/XMLString.hpp"
 
 #include <uima/taespecifierbuilder.hpp>
 #include <uima/xmlerror_handler.hpp>
@@ -401,7 +402,7 @@ namespace uima {
                 if (delegateSpec != NULL) {
                   icu::UnicodeString loc = convert(delegateSpec->getAttribute(convert(ATTR_IMPORT_DESC_LOCATION)));
 				  icu::UnicodeString fn = ResourceManager::resolveFilename(loc, xmlFileLoc);
-				  if (loc.length() > 0) {			    
+                  if (loc.length() > 0) {
 					parseAnalysisEngineDescription(*pdelegateTaeSpec, fn);
                     taeSpec.addDelegate(key, pdelegateTaeSpec);
                   } else {
@@ -490,6 +491,246 @@ namespace uima {
 
   }
 
+  void XMLParser::buildAnalysisEngineDescription(AnalysisEngineDescription & taeSpec,
+      DOMElement * descElem,
+      const icu::UnicodeString & xmlFileLoc,
+      bool changeOrder) {
+
+      if (changeOrder == false) {
+          buildAnalysisEngineDescription(taeSpec, descElem, xmlFileLoc);
+          return;
+      }
+
+    assert(EXISTS(descElem));
+    assert( XMLString::compareString(descElem->getNodeName(), convert(TAG_TAE_DESC)) == 0 ||
+            XMLString::compareString(descElem->getNodeName(), convert(TAG_AE_DESC)) == 0 ||
+            XMLString::compareString(descElem->getNodeName(), convert(TAG_CASCONSUMER_DESC)) == 0 );
+    //save the root node name
+    if (XMLString::compareString(descElem->getNodeName(), convert(TAG_CASCONSUMER_DESC)) == 0) {
+      taeSpec.setPrimitive(true);
+    }
+    taeSpec.setXmlRootTag(convert(descElem->getNodeName()));
+    DOMNodeList * children = descElem->getChildNodes();
+    assert( EXISTS(children) );
+
+    try {
+      taeSpec.setXmlFileLocation(xmlFileLoc);
+
+      size_t i;
+      size_t delegateIdx;
+      size_t primitiveIdx;
+
+      // parse delegate first!!!
+      for (i=0; i < children->getLength(); i++) {
+          if ((children->item(i))->getNodeType() != DOMNode::ELEMENT_NODE) {
+              continue;
+          }
+          const icu::UnicodeString & childTag = convert((children->item(i))->getNodeName());
+          if (childTag.compare(TAG_TAE_PRIMITIVE) == 0) {
+              taeSpec.setPrimitive(isTrue(getSpannedText(children->item(i))));
+              primitiveIdx = i;
+          }
+          if (childTag.compare(TAG_DELEGATE_AES) == 0) {
+            delegateIdx = i;
+            DOMNodeList * delegateAEs = ((children->item(i))->getChildNodes());
+            if (EXISTS(delegateAEs)) {
+              size_t j;
+              for (j=0; j < delegateAEs->getLength(); j++) {
+                DOMNode * node = delegateAEs->item(j);
+                if (node->getNodeType() != DOMNode::ELEMENT_NODE) {
+                  continue;
+                }
+                assert(XMLString::compareString(node->getNodeName(), convert(TAG_DELEGATE_AE)) == 0);
+                DOMElement * delegateAE =  (DOMElement *)node;
+                assert(EXISTS(delegateAE));
+                icu::UnicodeString key = convert(delegateAE->getAttribute(convert(ATTR_DELEGATE_AE_KEY)));
+                std::cout << "the key is <<<<<<<<<<<<< " << key << std::endl;
+                AnalysisEngineDescription * pdelegateTaeSpec = new AnalysisEngineDescription();
+                DOMNodeList * childNodes = delegateAE->getChildNodes();
+
+                DOMElement * delegateSpec = (DOMElement *) findFirst(childNodes, TAG_AE_DESC);
+                if (delegateSpec == NULL)
+                  delegateSpec = (DOMElement *) findFirst(childNodes, TAG_TAE_DESC);
+                if (delegateSpec == NULL)
+                  delegateSpec = (DOMElement *) findFirst(childNodes, TAG_CASCONSUMER_DESC);
+
+                if (EXISTS(delegateSpec)) {           //the delegate is explicitly copied into the aggregate xml file
+                  buildAnalysisEngineDescription(*pdelegateTaeSpec, delegateSpec, xmlFileLoc);
+                  taeSpec.addDelegate(key, pdelegateTaeSpec);
+                } else {
+                  //import element
+                  delegateSpec = (DOMElement *) findFirst (childNodes, TAG_IMPORT_DESC);
+                  if (delegateSpec != NULL) {
+                    icu::UnicodeString loc = convert(delegateSpec->getAttribute(convert(ATTR_IMPORT_DESC_LOCATION)));
+                    icu::UnicodeString fn = ResourceManager::resolveFilename(loc, xmlFileLoc);
+                    std::cout << "the location is <<<<<<<<<<<<< " << loc << std::endl;
+                    std::cout << "     final location is <<<<<<<<<<<<< " << fn << std::endl;
+                    if (loc.length() > 0) {
+                      parseAnalysisEngineDescription(*pdelegateTaeSpec, fn);
+                      taeSpec.addDelegate(key, pdelegateTaeSpec);
+                    } else {
+                      //throw exception when import location attribute is not set.
+                      ErrorMessage errMsg = ErrorMessage(UIMA_MSG_ID_EXC_UNKNOWN_CONFIG_XML_TAG);
+                      errMsg.addParam(childTag);
+                      errMsg.addParam(xmlFileLoc);
+
+                      UIMA_EXC_THROW_NEW(InvalidXMLException,
+                                         UIMA_ERR_IMPORT_INVALID_XML_ATTRIBUTE,
+                                         errMsg,
+                                         UIMA_MSG_ID_EXCON_BUILD_TAE_SPEC,
+                                         ErrorInfo::unrecoverable);
+                    }
+                  } else {
+                    //check for xi:include element, try to get filename
+                    DOMElement * delegateInc = (DOMElement *) findFirst(childNodes,
+                                               TAG_DELEGATE_AE_INCLUDE);
+                    if (EXISTS(delegateInc)) {
+                      icu::UnicodeString newFileName = ResourceManager::resolveFilename(getSpannedText(delegateInc),
+                                                       xmlFileLoc);
+                      parseAnalysisEngineDescription(*pdelegateTaeSpec, newFileName);
+                      taeSpec.addDelegate(key, pdelegateTaeSpec);
+
+                    }
+                  }  //include
+                }
+              }
+            }
+            break;
+          }
+      }
+
+      for (i=0; i < children->getLength(); i++) {
+
+        if (i == delegateIdx || i == primitiveIdx) continue;
+        if ((children->item(i))->getNodeType() != DOMNode::ELEMENT_NODE) {
+          continue;
+        }
+        const icu::UnicodeString & childTag = convert((children->item(i))->getNodeName());
+        if (childTag.compare(TAG_TAE_PRIMITIVE) == 0) {
+          taeSpec.setPrimitive(isTrue(getSpannedText(children->item(i))));
+        } else if (childTag.compare(TAG_AN_IMPL_NAME) == 0 ||
+                   childTag.compare(TAG_IMPL_NAME) == 0) {
+          taeSpec.setAnnotatorImpName(getSpannedText(children->item(i)));
+        } else if (childTag.compare(TAG_DELEGATE_AES) == 0) {
+          DOMNodeList * delegateAEs = ((children->item(i))->getChildNodes());
+          if (EXISTS(delegateAEs)) {
+            size_t j;
+            for (j=0; j < delegateAEs->getLength(); j++) {
+              DOMNode * node = delegateAEs->item(j);
+              if (node->getNodeType() != DOMNode::ELEMENT_NODE) {
+                continue;
+              }
+              assert(XMLString::compareString(node->getNodeName(), convert(TAG_DELEGATE_AE)) == 0);
+              DOMElement * delegateAE =  (DOMElement *)node;
+              assert(EXISTS(delegateAE));
+              icu::UnicodeString key = convert(delegateAE->getAttribute(convert(ATTR_DELEGATE_AE_KEY)));
+              AnalysisEngineDescription * pdelegateTaeSpec = new AnalysisEngineDescription();
+              DOMNodeList * childNodes = delegateAE->getChildNodes();
+
+              DOMElement * delegateSpec = (DOMElement *) findFirst(childNodes, TAG_AE_DESC);
+              if (delegateSpec == NULL)
+                delegateSpec = (DOMElement *) findFirst(childNodes, TAG_TAE_DESC);
+              if (delegateSpec == NULL)
+                delegateSpec = (DOMElement *) findFirst(childNodes, TAG_CASCONSUMER_DESC);
+
+              if (EXISTS(delegateSpec)) {           //the delegate is explicitly copied into the aggregate xml file
+                buildAnalysisEngineDescription(*pdelegateTaeSpec, delegateSpec, xmlFileLoc);
+                taeSpec.addDelegate(key, pdelegateTaeSpec);
+              } else {
+                //import element
+                delegateSpec = (DOMElement *) findFirst (childNodes, TAG_IMPORT_DESC);
+                if (delegateSpec != NULL) {
+                  icu::UnicodeString loc = convert(delegateSpec->getAttribute(convert(ATTR_IMPORT_DESC_LOCATION)));
+				  icu::UnicodeString fn = ResourceManager::resolveFilename(loc, xmlFileLoc);
+                  if (loc.length() > 0) {
+					parseAnalysisEngineDescription(*pdelegateTaeSpec, fn);
+                    taeSpec.addDelegate(key, pdelegateTaeSpec);
+                  } else {
+                    //throw exception when import location attribute is not set.
+                    ErrorMessage errMsg = ErrorMessage(UIMA_MSG_ID_EXC_UNKNOWN_CONFIG_XML_TAG);
+                    errMsg.addParam(childTag);
+                    errMsg.addParam(xmlFileLoc);
+
+                    UIMA_EXC_THROW_NEW(InvalidXMLException,
+                                       UIMA_ERR_IMPORT_INVALID_XML_ATTRIBUTE,
+                                       errMsg,
+                                       UIMA_MSG_ID_EXCON_BUILD_TAE_SPEC,
+                                       ErrorInfo::unrecoverable);
+                  }
+                } else {
+                  //check for xi:include element, try to get filename
+                  DOMElement * delegateInc = (DOMElement *) findFirst(childNodes,
+                                             TAG_DELEGATE_AE_INCLUDE);
+                  if (EXISTS(delegateInc)) {
+                    icu::UnicodeString newFileName = ResourceManager::resolveFilename(getSpannedText(delegateInc),
+                                                     xmlFileLoc);
+                    parseAnalysisEngineDescription(*pdelegateTaeSpec, newFileName);
+                    taeSpec.addDelegate(key, pdelegateTaeSpec);
+
+                  }
+                }  //include
+              }
+            }
+          }
+        } else if (childTag.compare(TAG_AE_METADATA) == 0  ||
+                   childTag.compare(TAG_PROCESSING_RESOURCE_METADATA) == 0 ) {
+          std::cout << "================= enter meta data parsing?" << std::endl;
+          taeSpec.setAnalysisEngineMetaData(buildAEMetaData((DOMElement *) (children->item(i)), xmlFileLoc));
+          taeSpec.getAnalysisEngineMetaData()->getTypeSystemDescription()->setXmlFileLocation(xmlFileLoc);
+          std::vector<icu::UnicodeString> alreadyImportedTypeSystemLocations;
+          taeSpec.getAnalysisEngineMetaData()->getTypeSystemDescription()->resolveImports(alreadyImportedTypeSystemLocations);
+        } else if (childTag.compare(UIMA_FRAMEWORK_IMP) == 0 ) {
+          const icu::UnicodeString & impName = getSpannedText(children->item(i));
+          if (impName.compare(FRAMEWORK_IMP_CPLUSPLUS) == 0)
+            taeSpec.setFrameworkImplName(AnalysisEngineDescription::CPLUSPLUS);
+          else if (impName.compare(FRAMEWORK_IMP_JAVA) == 0)
+            taeSpec.setFrameworkImplName(AnalysisEngineDescription::JAVA);
+
+          else {
+            /**
+            ErrorMessage errMsg = ErrorMessage(UIMA_MSG_ID_EXC_UNKNOWN_CONFIG_XML_TAG);
+            errMsg.addParam(impName);
+            errMsg.addParam(schemaFileName);
+
+            UIMA_EXC_THROW_NEW(InvalidXMLException,
+                              UIMA_ERR_CONFIG_INVALID_XML_TAG,
+                              errMsg,
+                              UIMA_MSG_ID_EXCON_BUILD_TAE_SPEC,
+                              ErrorInfo::unrecoverable);
+            **/
+          }
+        } else if (childTag.compare(TAG_EXTERNAL_RESOURCE_DEPENDENCIES) == 0) {
+          /* taph 15.04.2004: we don't directly support ressources yet but we accept them in the XML to pass them to Jedii*/
+        } else if (childTag.compare(TAG_EXTERNAL_RESOURCES) == 0) {
+          /* taph 15.04.2004: we don't directly support ressources yet but we accept them in the XML to pass them to Jedii*/
+        } else if (childTag.compare(TAG_SOFA_MAPPINGS) == 0) {
+          buildSofaMappings(taeSpec, (DOMElement *) (children->item(i)) );
+        } else if (childTag.compare(TAG_RESMGR_CONFIG_DESC) == 0) {
+          //ignored
+        }
+        else {
+          /**
+          ErrorMessage errMsg = ErrorMessage(UIMA_MSG_ID_EXC_UNKNOWN_CONFIG_XML_TAG);
+          errMsg.addParam(childTag);
+          errMsg.addParam(schemaFileName);
+
+          UIMA_EXC_THROW_NEW(InvalidXMLException,
+                            UIMA_ERR_CONFIG_INVALID_XML_TAG,
+                            errMsg,
+                            UIMA_MSG_ID_EXCON_BUILD_TAE_SPEC,
+                            ErrorInfo::unrecoverable);
+          **/
+        }
+      }
+    } catch (InvalidXMLException & rclException) {
+      rclException.getErrorInfo().addContext(ErrorMessage(UIMA_MSG_ID_EXCON_BUILD_TAE_SPEC_FROM_FILE, xmlFileLoc));
+      throw rclException;
+    } catch (DuplicateConfigElemException & rclException) {
+      rclException.getErrorInfo().addContext(ErrorMessage(UIMA_MSG_ID_EXCON_BUILD_TAE_SPEC_FROM_FILE, xmlFileLoc));
+      throw rclException;
+    }
+
+  }
 
   void XMLParser::buildTypeSystemSpecifier(TypeSystemDescription & tsDesc,
     DOMElement * descElem,
@@ -511,6 +752,8 @@ namespace uima {
 
     DOMNodeList * children = descElem->getChildNodes();
     assert( EXISTS(children) );
+    std::cout << "================= enter meta data!" << std::endl;
+    std::cout << "================= " << children->getLength() << std::endl;
 
     size_t i;
     for (i=0; i < children->getLength(); i++) {
