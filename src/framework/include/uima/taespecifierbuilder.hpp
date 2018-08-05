@@ -187,6 +187,8 @@ namespace uima {
 											InputSource const & crInputSource);
 
     OperationalProperties * buildOperationalProperties(DOMElement * descElem);
+    XMLCh const * convert(char const * cpBuf) const;
+    icu::UnicodeString convert( XMLCh const * cpUCBuf ) const;
   private:
     
     AnalysisEngineMetaData * buildAEMetaData(DOMElement * specElem, icu::UnicodeString const &);
@@ -225,8 +227,6 @@ namespace uima {
     CapabilityLanguageFlow * buildCapabilityLanguageFlow(DOMElement * specElem);
     FlowConstraints* buildFlowConstraints(DOMElement * specElem);
     SofaMapping * buildSofaMapping(DOMElement * specElem);
-     XMLCh const * convert(char const * cpBuf) const;
-    icu::UnicodeString convert( XMLCh const * cpUCBuf ) const;
     icu::UnicodeString getSpannedText(DOMNode * node);
     DOMNode * findFirst(DOMNodeList * nodes, char const * tagName);
     DOMElement * findFirstElementNode(DOMNodeList * nodes);
