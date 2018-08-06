@@ -544,7 +544,6 @@ namespace uima {
                 DOMElement * delegateAE =  (DOMElement *)node;
                 assert(EXISTS(delegateAE));
                 icu::UnicodeString key = convert(delegateAE->getAttribute(convert(ATTR_DELEGATE_AE_KEY)));
-                std::cout << "the key is <<<<<<<<<<<<< " << key << std::endl;
                 AnalysisEngineDescription * pdelegateTaeSpec = new AnalysisEngineDescription();
                 DOMNodeList * childNodes = delegateAE->getChildNodes();
 
@@ -563,8 +562,6 @@ namespace uima {
                   if (delegateSpec != NULL) {
                     icu::UnicodeString loc = convert(delegateSpec->getAttribute(convert(ATTR_IMPORT_DESC_LOCATION)));
                     icu::UnicodeString fn = ResourceManager::resolveFilename(loc, xmlFileLoc);
-                    std::cout << "the location is <<<<<<<<<<<<< " << loc << std::endl;
-                    std::cout << "     final location is <<<<<<<<<<<<< " << fn << std::endl;
                     if (loc.length() > 0) {
                       parseAnalysisEngineDescription(*pdelegateTaeSpec, fn);
                       taeSpec.addDelegate(key, pdelegateTaeSpec);
@@ -674,7 +671,6 @@ namespace uima {
           }
         } else if (childTag.compare(TAG_AE_METADATA) == 0  ||
                    childTag.compare(TAG_PROCESSING_RESOURCE_METADATA) == 0 ) {
-          std::cout << "================= enter meta data parsing?" << std::endl;
           taeSpec.setAnalysisEngineMetaData(buildAEMetaData((DOMElement *) (children->item(i)), xmlFileLoc));
           taeSpec.getAnalysisEngineMetaData()->getTypeSystemDescription()->setXmlFileLocation(xmlFileLoc);
           std::vector<icu::UnicodeString> alreadyImportedTypeSystemLocations;
@@ -752,8 +748,6 @@ namespace uima {
 
     DOMNodeList * children = descElem->getChildNodes();
     assert( EXISTS(children) );
-    std::cout << "================= enter meta data!" << std::endl;
-    std::cout << "================= " << children->getLength() << std::endl;
 
     size_t i;
     for (i=0; i < children->getLength(); i++) {
