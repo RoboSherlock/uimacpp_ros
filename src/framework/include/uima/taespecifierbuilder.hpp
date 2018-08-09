@@ -239,6 +239,10 @@ namespace uima {
      */
     void buildAnalysisEngineDescription(AnalysisEngineDescription & taeSpec, DOMElement * specElem,
                   const icu::UnicodeString & xmlFileLoc);
+    void buildAnalysisEngineDescription(AnalysisEngineDescription & taeSpec,
+                                        DOMElement * descElem,
+                                        const icu::UnicodeString & xmlFileLoc,
+                                        bool changeOrder);
 	void buildTypePriorities(AnalysisEngineMetaData::TyVecpTypePriorities & typePriorities, DOMElement * specElem);
     
 	void buildTypePriorities(AnalysisEngineMetaData & aeMetaData,
