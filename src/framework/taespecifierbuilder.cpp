@@ -491,6 +491,11 @@ namespace uima {
 
   }
 
+  /*
+   * This function is for manually enforcing parsing the delegate engine section before
+   * parsing metadata section, so as to ensure that metadata has the correct information.
+   * This will be used when users want to manually add delegate section themselves.
+   */
   void XMLParser::buildAnalysisEngineDescription(AnalysisEngineDescription & taeSpec,
       DOMElement * descElem,
       const icu::UnicodeString & xmlFileLoc,
